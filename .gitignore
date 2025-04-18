@@ -1,0 +1,63 @@
+
+# ──────────────────────────────
+#  Core Node / TypeScript
+# ──────────────────────────────
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/
+*.tsbuildinfo
+
+# ──────────────────────────────
+#  Environment & Secrets
+# ──────────────────────────────
+.env
+.env.*          # .env.local, .env.dev, etc.
+.vercel/
+.supabase/
+.supabase/*
+
+# ──────────────────────────────
+#  Testing & Coverage
+# ──────────────────────────────
+coverage/
+.nyc_output/
+jest*.html
+test-results/
+
+# ──────────────────────────────
+#  Logs & Runtime Output
+# ──────────────────────────────
+logs/
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# ──────────────────────────────
+#  OS / Editor Junk
+# ──────────────────────────────
+.DS_Store
+Thumbs.db
+ehthumbs.db
+.idea/
+.vscode/
+*.sw?
+*~ 
+# vim swap files
+*.swo
+*.swp
+# JetBrains
+*.iml
+
+# ──────────────────────────────
+#  Misc Tools
+# ──────────────────────────────
+# prisma schema snapshots
+prisma/migrations/
+# local tunnel URLs
+.ngrok.log
