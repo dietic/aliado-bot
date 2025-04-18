@@ -16,7 +16,7 @@ build/
 #  Environment & Secrets
 # ──────────────────────────────
 .env
-.env.*          # .env.local, .env.dev, etc.
+.env.*
 .vercel/
 .supabase/
 .supabase/*
