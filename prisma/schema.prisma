@@ -1,0 +1,82 @@
+// Prisma schema for Aliado MVP
+// ------------------------------------------------------------
+//  - Postgres database (Supabase)
+//  - Generator outputs Prisma Client
+//  - ServiceCategory enum covers initial verticals
+//  - Provider <-> Complaint one‑to‑many relation
+//  - Request & Lead allow tracking user inquiries and provider leads
+// ------------------------------------------------------------
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("SUPABASE_DATABASE_URL")
+}
+
+enum ServiceCategory {
+  PLOMERIA
+  ELECTRICIDAD
+  CERRAJERIA
+  LIMPIEZA
+  PASTELERIA
+  MECANICA
+  CLASES
+  OTROS
+}
+
+model Provider {
+  id         String            @id @default(uuid())
+  dni        String            @db.VarChar(8)
+  firstName  String
+  lastName   String
+  district   String            @db.VarChar(50)
+  phone      String            @db.VarChar(20)
+  categories ServiceCategory[]
+  rating     Float             @default(5.0)
+  complaints Int               @default(0)
+  createdAt  DateTime          @default(now())
+
+  // relations
+  complaintsList Complaint[]
+  leads          Lead[]
+}
+
+model Complaint {
+  id         String   @id @default(uuid())
+  providerId String
+  userPhone  String   @db.VarChar(20)
+  message    String
+  createdAt  DateTime @default(now())
+
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([providerId])
+}
+
+model Request {
+  id        String           @id @default(uuid())
+  userPhone String           @db.VarChar(20)
+  rawText   String
+  category  ServiceCategory?
+  district  String?
+  createdAt DateTime         @default(now())
+
+  leads Lead[]
+}
+
+model Lead {
+  id          String   @id @default(uuid())
+  requestId   String
+  providerId  String
+  deliveredAt DateTime @default(now())
+  contacted   Boolean  @default(false)
+
+  request  Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([providerId])
+}
