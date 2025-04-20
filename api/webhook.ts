@@ -37,7 +37,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (
     sigHeader &&
-    !twilio.validateRequest(AUTH_TOKEN, sigHeader, fullUrl, rawStr)
+    !twilio.validateRequest(AUTH_TOKEN, sigHeader, fullUrl, { rawStr })
   ) {
     return res.status(403).send("Invalid Twilio signature");
   }
@@ -62,7 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // 6️⃣  Craft response text
   const reply = providers?.length
     ? providers
-        .map((p, i) => `${i + 1}. ${p.firstname} ${p.lastname} – ${p.phone}`)
+        .map((p, i) => `${i + 1}. ${p.firstName} ${p.lastName} – ${p.phone}`)
         .join("\n")
     : "Lo siento, no encontré proveedores disponibles.";
 
