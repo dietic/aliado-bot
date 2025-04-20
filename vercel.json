@@ -2,10 +2,7 @@
   "version": 2,
   "functions": {
     "api/*.ts": {
-      "runtime": "nodejs20.x",
-      "maxDuration": 10,
-      "memory": 256,
-      "excludeFiles": "node_modules/aws-sdk/**"
+      "runtime": "nodejs18.x"
     }
   }
 }
