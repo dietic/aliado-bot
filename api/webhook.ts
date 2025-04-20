@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import twilio from "twilio";
-import { classify } from "../libs/classifier";
-import { db } from "../libs/db";
+import { classify } from "../src/libs/classifier";
+import { db } from "../src/libs/db";
 
 const client = twilio(
   process.env.TWILIO_ACCOUNT_SID!,
