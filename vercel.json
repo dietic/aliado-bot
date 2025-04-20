@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "functions": {
+    "api/*.ts": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 10,
+      "memory": 256,
+      "experimental": { "awsLambdaHandler": true },
+      "excludeFiles": "node_modules/aws-sdk/**"
+    }
+  }
+}

@@ -26,6 +26,7 @@
     "@supabase/supabase-js": "^2.49.4",
     "@vercel/node": "^5.1.14",
     "openai": "^4.95.1",
+    "raw-body": "^3.0.0",
     "twilio": "^5.5.2"
   }
 }
