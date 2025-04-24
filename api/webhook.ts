@@ -46,11 +46,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const body = (params.Body as string) || "";
 
   const { category, district } = await classify(body);
+  const normalizedCategory = category
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 
   const { data: providers, error } = await db
     .from("Provider")
     .select("firstName,lastName,phone")
-    .contains("categories", [category])
+    .contains("categories", [normalizedCategory])
     .ilike("district", district ?? "%")
     .limit(3);
 
