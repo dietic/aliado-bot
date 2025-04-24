@@ -45,31 +45,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const from = params.From as string;
   const body = (params.Body as string) || "";
 
-  const { category, district } = await classify(body);
-  const normalizedCategory = category
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+  try {
+    const { category, district } = await classify(body);
+    console.log(category, district);
+    const normalizedCategory = category
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
 
-  const { data: providers, error } = await db
-    .from("Provider")
-    .select("firstName,lastName,phone")
-    .contains("categories", [normalizedCategory])
-    .ilike("district", district ?? "%")
-    .limit(3);
+    const { data: providers, error } = await db
+      .from("Provider")
+      .select("firstName,lastName,phone")
+      .contains("categories", [normalizedCategory])
+      .ilike("district", district ?? "%")
+      .limit(3);
 
-  if (error) console.error("Supabase error", error);
+    if (error) console.error("Supabase error", error);
 
-  const reply = providers?.length
-    ? providers
-        .map((p, i) => `${i + 1}. ${p.firstName} ${p.lastName} – ${p.phone}`)
-        .join("\n")
-    : "Lo siento, no encontré proveedores disponibles.";
+    const reply = providers?.length
+      ? providers
+          .map((p, i) => `${i + 1}. ${p.firstName} ${p.lastName} – ${p.phone}`)
+          .join("\n")
+      : "Lo siento, no encontré proveedores disponibles.";
 
-  await twilioClient.messages.create({
-    from: TWILIO_FROM,
-    to: from,
-    body: reply,
-  });
+    await twilioClient.messages.create({
+      from: TWILIO_FROM,
+      to: from,
+      body: reply,
+    });
 
-  return res.status(200).send("Delivered");
+    return res.status(200).send("Delivered");
+  } catch (e) {
+    console.log("e", e);
+    return res.status(500).send("Error on server");
+  }
 }
