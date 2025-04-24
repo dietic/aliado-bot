@@ -31,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const params = parse(rawStr);
 
   const sigHeader = req.headers["x-twilio-signature"] as string | undefined;
-  const fullUrl = `https://${req.headers.host}${req.url}`;
+  const fullUrl = "https://aliado-bot.vercel.app/api/webhook";
 
   // ✅ Correct signature validation
   if (
