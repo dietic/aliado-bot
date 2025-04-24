@@ -36,7 +36,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // ✅ Correct signature validation
   if (
     sigHeader &&
-    !twilio.validateRequest(AUTH_TOKEN, sigHeader, fullUrl, { rawStr })
+    !twilio.validateRequest(AUTH_TOKEN, sigHeader, fullUrl, params)
   ) {
     console.error("Twilio signature mismatch", { fullUrl, rawStr, sigHeader });
     return res.status(403).send("Invalid Twilio signature");
