@@ -55,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data: providers, error } = await db
       .from("Provider")
       .select("firstName,lastName,phone")
-      .contains("categories", [normalizedCategory])
+      .contains("categories", [normalizedCategory.toUpperCase()])
       .ilike("district", district ?? "%")
       .limit(3);
 
