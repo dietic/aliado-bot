@@ -1,6 +1,7 @@
 // src/services/providerService.ts
 
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { link } from "fs";
 
 // — Env-driven Supabase client setup
 const supabaseUrl = process.env.SUPABASE_URL!;
@@ -29,6 +30,7 @@ export async function getProvidersByCategory(
     .ilike("slug", categorySlug)
     .maybeSingle();
 
+  console.log("categoryRow", categoryRow);
   if (catError) {
     throw new Error(
       `Category lookup failed for "${categorySlug}": ${catError.message}`,
@@ -44,7 +46,7 @@ export async function getProvidersByCategory(
     .from("_ProviderCategories") // implicit join table named after your @relation
     .select("B") // B is the Provider.id foreign key
     .eq("A", categoryId); // A is the Category.id foreign key
-
+  console.log("linkError", linkError);
   if (linkError) {
     throw new Error(
       `Failed to fetch provider–category links for "${categorySlug}": ${linkError.message}`,
