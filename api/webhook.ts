@@ -46,8 +46,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const body = (params.Body as string) || "";
 
   try {
-    const { category, district } = await classify(body);
-    console.log(category, district);
+    const openAIResponse = await classify(body);
+    const category = openAIResponse?.category;
+    const district = openAIResponse?.district;
+    console.log("openAIResponse", openAIResponse);
     const normalizedCategory = category
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
