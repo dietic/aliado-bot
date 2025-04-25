@@ -47,7 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 2) Classify incoming text
     const ai = await classify(body);
     console.log(ai);
-    const categoryRaw = ai?.category;
+    const categoryRaw = ai?.category.toLowerCase();
     const districtList = ai?.district; // now an array of strings
 
     if (!categoryRaw) {
