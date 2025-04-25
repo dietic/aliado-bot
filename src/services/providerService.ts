@@ -3,7 +3,7 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 // — Env-driven Supabase client setup
-const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
@@ -15,21 +15,18 @@ export interface Provider {
 }
 
 /**
- * Fetch up to 3 providers by category slug + optional district filter.
- * District may be a single string or an array of strings (for multiple districts).
+ * Fetch up to 3 providers by category slug + optional district(s) filter.
+ * Handles the implicit many-to-many join table (_ProviderCategories with columns A and B).
  */
 export async function getProvidersByCategory(
   categorySlug: string,
   district?: string | string[],
 ): Promise<Provider[]> {
-  // 1️⃣ Normalize slug back to lowercase (your DB stores slugs like "tecnico-de-celular")
-  const slugLower = categorySlug.toLowerCase();
-
-  // 2️⃣ Lookup the category record (use maybeSingle to avoid throwing on zero matches)
+  // 1️⃣ Lookup the category case-insensitively
   const { data: categoryRow, error: catError } = await supabase
     .from("Category")
     .select("id")
-    .eq("slug", slugLower)
+    .ilike("slug", categorySlug)
     .maybeSingle();
 
   if (catError) {
@@ -42,11 +39,11 @@ export async function getProvidersByCategory(
   }
   const categoryId: string = categoryRow.id;
 
-  // 3️⃣ Pull the join‐table links
+  // 2️⃣ Pull the join‐table links from _ProviderCategories
   const { data: links, error: linkError } = await supabase
-    .from("_ProviderCategories")
-    .select("providerId")
-    .eq("CategoryId", categoryId);
+    .from("_ProviderCategories") // implicit join table named after your @relation
+    .select("B") // B is the Provider.id foreign key
+    .eq("A", categoryId); // A is the Category.id foreign key
 
   if (linkError) {
     throw new Error(
@@ -54,13 +51,12 @@ export async function getProvidersByCategory(
     );
   }
 
-  const providerIds = links.map((l) => l.providerId);
+  const providerIds = (links ?? []).map((row) => row.B as string);
   if (providerIds.length === 0) {
-    // no providers for that category → empty list
     return [];
   }
 
-  // 4️⃣ Build the provider query, injecting ID filter + optional district logic
+  // 3️⃣ Build the provider query
   let query = supabase
     .from("Provider")
     .select("firstName,lastName,phone")
@@ -68,13 +64,10 @@ export async function getProvidersByCategory(
     .limit(3);
 
   if (Array.isArray(district)) {
-    // multiple districts → IN filter
     query = query.in("district", district);
   } else if (district) {
-    // single district → case-insensitive LIKE
     query = query.ilike("district", `%${district}%`);
   }
-  // if no district passed, we leave the query as-is (all districts)
 
   const { data: providers, error: provError } = await query;
   if (provError) {
