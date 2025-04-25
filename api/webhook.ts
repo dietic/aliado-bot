@@ -25,9 +25,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const rawBuf = await getRawBody(req);
   const rawStr = rawBuf.toString("utf8");
   const params = parse(rawStr);
-
   const sigHeader = req.headers["x-twilio-signature"] as string | undefined;
   const fullUrl = "https://aliado-bot.vercel.app/api/webhook";
+
   if (
     sigHeader &&
     !twilio.validateRequest(AUTH_TOKEN, sigHeader, fullUrl, params)
@@ -47,7 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 2) Classify incoming text
     const ai = await classify(body);
     const categoryRaw = ai?.category;
-    const district = ai?.district;
+    const districtList = ai?.district; // now an array of strings
 
     if (!categoryRaw) {
       await twilioClient.messages.create({
@@ -58,16 +58,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).send("Delivered: unknown category");
     }
 
-    // Normalize accents & uppercase for your slugs
+    // Normalize accents & keep uppercase for display
     const normalizedCategory = categoryRaw
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .toUpperCase();
 
-    // 3) Fetch providers via your service
+    // 3) Fetch providers — now passing the array of districts directly
     let providers;
     try {
-      providers = await getProvidersByCategory(normalizedCategory, district);
+      providers = await getProvidersByCategory(
+        normalizedCategory,
+        districtList,
+      );
     } catch (err) {
       console.error("❌ Error fetching providers", err);
       await twilioClient.messages.create({
@@ -83,8 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!providers || providers.length === 0) {
       replyText =
         `No encontré proveedores para *${normalizedCategory}*` +
-        (district ? ` en *${district}*.` : ".") +
-        ``;
+        (districtList?.[0] ? ` en *${districtList[0]}* y alrededores.` : ".");
     } else {
       const lines = providers.map(
         (p, idx) => `${idx + 1}. ${p.firstName} ${p.lastName} — 📞 ${p.phone}`,
