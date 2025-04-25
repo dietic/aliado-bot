@@ -62,7 +62,7 @@ export async function getProvidersByCategory(
     .select("firstName,lastName,phone")
     .in("id", providerIds)
     .limit(3);
-
+  console.log("district", district);
   if (Array.isArray(district)) {
     // Case-insensitive OR for each district
     const orFilter = district.map((d) => `district.ilike.%${d}%`).join(",");
@@ -73,6 +73,7 @@ export async function getProvidersByCategory(
   }
 
   const { data: providers, error: provError } = await query;
+  console.log("data", providers);
   if (provError) {
     throw new Error(`Provider fetch failed: ${provError.message}`);
   }
