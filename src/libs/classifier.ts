@@ -14,6 +14,7 @@ export async function classify(text: string): Promise<{
       properties: {
         category: { type: "string" },
         district: { type: "string" },
+        message: { type: "string" },
       },
       required: ["category"],
     },
