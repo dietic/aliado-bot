@@ -139,7 +139,7 @@ export const CATEGORIES = [
     displayName: "Impermeabilización de techos",
   },
   { slug: "albanileria-general", displayName: "Albañilería general" },
-  { slug: "remodelacion-de-baños", displayName: "Remodelación de baños" },
+  { slug: "remodelacion-de-banos", displayName: "Remodelación de baños" },
   { slug: "remodelacion-de-cocinas", displayName: "Remodelación de cocinas" },
   {
     slug: "ventanas-y-puertas-de-aluminio",
