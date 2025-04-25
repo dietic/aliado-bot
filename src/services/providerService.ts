@@ -1,34 +1,36 @@
+// src/services/providerService.ts
+
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-// ——————————————
-// Supabase client setup
-// ——————————————
+// — Env-driven Supabase client setup
 const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!; // use your service-role key for unrestricted access
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
-// ——————————————
-// Types
-// ——————————————
+// — Provider DTO
 export interface Provider {
   firstName: string;
   lastName: string;
   phone: string;
 }
 
-// ——————————————
-// Service: fetch providers by category + district
-// ——————————————
+/**
+ * Fetch up to 3 providers by category slug + optional district filter.
+ * District may be a single string or an array of strings (for multiple districts).
+ */
 export async function getProvidersByCategory(
   categorySlug: string,
-  district?: string,
+  district?: string | string[],
 ): Promise<Provider[]> {
-  // 1️⃣ Lookup the category
+  // 1️⃣ Normalize slug back to lowercase (your DB stores slugs like "tecnico-de-celular")
+  const slugLower = categorySlug.toLowerCase();
+
+  // 2️⃣ Lookup the category record (use maybeSingle to avoid throwing on zero matches)
   const { data: categoryRow, error: catError } = await supabase
     .from("Category")
     .select("id")
-    .eq("slug", categorySlug.toUpperCase())
-    .single();
+    .eq("slug", slugLower)
+    .maybeSingle();
 
   if (catError) {
     throw new Error(
@@ -36,11 +38,11 @@ export async function getProvidersByCategory(
     );
   }
   if (!categoryRow) {
-    throw new Error(`Category "${categorySlug}" not found.`);
+    throw new Error(`Category "${categorySlug}" not found in Category table.`);
   }
   const categoryId: string = categoryRow.id;
 
-  // 2️⃣ Pull provider IDs from the join table
+  // 3️⃣ Pull the join‐table links
   const { data: links, error: linkError } = await supabase
     .from("_ProviderCategories")
     .select("providerId")
@@ -48,28 +50,36 @@ export async function getProvidersByCategory(
 
   if (linkError) {
     throw new Error(
-      `Failed to fetch provider–category links: ${linkError.message}`,
+      `Failed to fetch provider–category links for "${categorySlug}": ${linkError.message}`,
     );
   }
-  const providerIds = links.map((l) => l.providerId);
 
-  // If no providers found for this category, short-circuit
+  const providerIds = links.map((l) => l.providerId);
   if (providerIds.length === 0) {
+    // no providers for that category → empty list
     return [];
   }
 
-  // 3️⃣ Fetch providers with optional district filter
-  const districtFilter = district ? `%${district}%` : "%";
-  const { data: providers, error: provError } = await supabase
+  // 4️⃣ Build the provider query, injecting ID filter + optional district logic
+  let query = supabase
     .from("Provider")
     .select("firstName,lastName,phone")
     .in("id", providerIds)
-    .ilike("district", districtFilter)
     .limit(3);
 
+  if (Array.isArray(district)) {
+    // multiple districts → IN filter
+    query = query.in("district", district);
+  } else if (district) {
+    // single district → case-insensitive LIKE
+    query = query.ilike("district", `%${district}%`);
+  }
+  // if no district passed, we leave the query as-is (all districts)
+
+  const { data: providers, error: provError } = await query;
   if (provError) {
     throw new Error(`Provider fetch failed: ${provError.message}`);
   }
 
-  return providers as Provider[];
+  return (providers ?? []) as Provider[];
 }
