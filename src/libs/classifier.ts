@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { CATEGORIES } from "../config/categories";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -11,8 +12,18 @@ export async function classify(text: string): Promise<{
     parameters: {
       type: "object",
       properties: {
-        category: { type: "string" },
-        district: { type: "string" },
+        category: {
+          type: "string",
+          enum: CATEGORIES,
+          description:
+            "Must be one of the pre-defined service slugs. Pick the best match.",
+        },
+        district: {
+          type: "array",
+          items: { type: "string" },
+          description:
+            "An array containing the requested Lima district plus four adjacent districts.",
+        },
       },
       required: ["category", "district"],
     },
