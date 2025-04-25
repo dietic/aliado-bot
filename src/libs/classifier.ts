@@ -5,6 +5,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 export async function classify(text: string): Promise<{
   category: string;
   district: string | null;
+  message: string;
 }> {
   const fn = {
     name: "route_service",
@@ -34,5 +35,9 @@ export async function classify(text: string): Promise<{
   const args = JSON.parse(
     res.choices[0].message.function_call!.arguments as string,
   );
-  return { category: args.category, district: args.district ?? null };
+  return {
+    category: args.category,
+    district: args.district ?? null,
+    message: args.message,
+  };
 }
