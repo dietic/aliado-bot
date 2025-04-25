@@ -56,8 +56,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { data: providers, error } = await db
       .from("Provider")
-      .select("firstName,lastName,phone")
-      .contains("categories", [normalizedCategory.toUpperCase()])
+      .select(
+        `
+    firstName,
+    lastName,
+    phone,
+    categories!inner(
+      slug
+    )
+  `,
+      )
+      // filter providers that have at least one related category with this slug
+      .eq("categories.slug", normalizedCategory.toUpperCase())
       .ilike("district", district ?? "%")
       .limit(3);
 
