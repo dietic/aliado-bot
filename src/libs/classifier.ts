@@ -1,12 +1,18 @@
+// src/libs/classifier.ts
+
 import OpenAI from "openai";
 import { CATEGORIES } from "../config/categories";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+
+// Extract just the slugs from your config
+const VALID_CATEGORIES = CATEGORIES.map((c) => c.slug.toUpperCase());
 
 export async function classify(text: string): Promise<{
   category: string;
-  district: string;
+  district: string[];
 }> {
+  // Define the function schema with an enum constraint on category
   const fn = {
     name: "route_service",
     parameters: {
@@ -14,7 +20,7 @@ export async function classify(text: string): Promise<{
       properties: {
         category: {
           type: "string",
-          enum: CATEGORIES,
+          enum: VALID_CATEGORIES,
           description:
             "Must be one of the pre-defined service slugs. Pick the best match.",
         },
@@ -29,23 +35,29 @@ export async function classify(text: string): Promise<{
     },
   };
 
+  // System prompt: set the expectations and list valid categories
+  const systemPrompt = `
+Eres Aliado, el bot de WhatsApp que enruta servicios en Lima Metropolitana.
+Cuando devuelvas JSON vía la función "route_service", asegúrate de:
+ • category: uno de [${VALID_CATEGORIES.join(", ")}]
+ • district: array de longitud 5 (distrito principal + 4 distritos aledaños).
+`;
+
   const res = await openai.chat.completions.create({
     model: "gpt-4o-mini",
-    functions: [fn],
-    function_call: { name: "route_service" },
     messages: [
-      {
-        role: "system",
-        content:
-          "Eres Aliado, un bot conversacional de WhatsApp que enruta servicios en Lima. Debes devolver un JSON con category y district (district debe ser un array de el distrito más 4 distritos aledaños).",
-      },
+      { role: "system", content: systemPrompt.trim() },
       { role: "user", content: text },
     ],
+    functions: [fn],
+    function_call: { name: "route_service" },
   });
 
+  // Parse and return
   const args = JSON.parse(
     res.choices[0].message.function_call!.arguments as string,
   );
+
   return {
     category: args.category,
     district: args.district,
