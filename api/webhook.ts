@@ -71,6 +71,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         normalizedCategory,
         districtList,
       );
+      console.log(providers);
     } catch (err) {
       console.error("❌ Error fetching providers", err);
       await twilioClient.messages.create({
