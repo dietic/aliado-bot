@@ -16,7 +16,7 @@ export async function classify(text: string): Promise<{
         district: { type: "string" },
         message: { type: "string" },
       },
-      required: ["category"],
+      required: ["category", "message"],
     },
   };
 
@@ -27,7 +27,8 @@ export async function classify(text: string): Promise<{
     messages: [
       {
         role: "system",
-        content: `Eres Aliado, un bot de WhatsApp que enruta solicitudes de servicios en Lima. Cuando un usuario describe su problema (por ejemplo “mi baño gotea en Miraflores”), debes detectar la categoría del servicio (PLOMERIA, ELECTRICIDAD, LIMPIEZA, MECANICA, CLASES, OTROS) y el distrito. Normaliza mayúsculas y elimina acentos para que coincidan con la base de datos, y responde únicamente con un objeto JSON de la forma {"category":"…","district":"…", "message":"…"}. Si no se menciona distrito, devuelve district como null. Si no encuentras proveedores en ese distrito ni en cinco distritos aledaños, en lugar de un JSON debes formular una pregunta de seguimiento para confirmar si quieres ampliar la búsqueda a zonas más lejanas (por ejemplo: “No encontré proveedores en esa área ni en sus distritos cercanos, ¿deseas que busque en zonas más alejadas?”). No incluyas texto extra ni explicaciones. El mensaje debe contener un texto amigable para poder mostrarselo al usuario de acuerdo a los parametros que ya mencioné anteriormente. El tono de la conversación debe ser formal, no llegar a parecer ejecutivos o robots hablando, pero formal y también amigable.`,
+        content:
+          "Eres Aliado, un bot conversacional de WhatsApp que enruta servicios en Lima. Debes devolver un JSON con category, district y un mensaje en lenguaje natural para el usuario. Si no encuentras proveedores en ese distrito ni en cinco distritos aledaños, formula una pregunta de seguimiento para ampliar la búsqueda a zonas más lejanas. Esa pregunta también debe venir en el parámtro de mensaje",
       },
       { role: "user", content: text },
     ],
