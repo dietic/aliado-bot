@@ -5,7 +5,6 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 export async function classify(text: string): Promise<{
   category: string;
   district: string | null;
-  message: string;
 }> {
   const fn = {
     name: "route_service",
@@ -14,9 +13,8 @@ export async function classify(text: string): Promise<{
       properties: {
         category: { type: "string" },
         district: { type: "string" },
-        message: { type: "string" },
       },
-      required: ["category", "message"],
+      required: ["category"],
     },
   };
 
@@ -28,7 +26,7 @@ export async function classify(text: string): Promise<{
       {
         role: "system",
         content:
-          "Eres Aliado, un bot conversacional de WhatsApp que enruta servicios en Lima. Debes devolver un JSON con category, district y un mensaje en lenguaje natural para el usuario. Si no encuentras proveedores en ese distrito ni en cinco distritos aledaños, formula una pregunta de seguimiento para ampliar la búsqueda a zonas más lejanas. Esa pregunta también debe venir en el parámtro de mensaje",
+          "Eres Aliado, un bot conversacional de WhatsApp que enruta servicios en Lima. Debes devolver un JSON con category y district (district debe ser un array de el distrito más 4 distritos aledaños).",
       },
       { role: "user", content: text },
     ],
@@ -40,6 +38,24 @@ export async function classify(text: string): Promise<{
   return {
     category: args.category,
     district: args.district ?? null,
-    message: args.message,
   };
 }
+
+// export async function getNaturalReply(
+//   provider: any,
+// ): Promise<{ message: string }> {
+//   const res = await openai.chat.completions.create({
+//     model: "gpt-4o-mini",
+//     messages: [
+//       {
+//         role: "system",
+//         content:
+//           "Eres Aliado, un bot conversacional de WhatsApp que enruta servicios en Lima. Debes devolver un JSON con category y district (district debe ser un array de el distrito más 4 distritos aledaños).",
+//       },
+//       {
+//         role: "user",
+//         content: `El usuario pidió ${category} en ${district}. Estos son los proveedores:\n${summary}\nRedacta un mensaje corto invitando a usarlo.`,
+//       },
+//     ],
+//   });
+// }
