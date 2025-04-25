@@ -47,6 +47,7 @@ export async function getProvidersByCategory(
     .select("B") // B is the Provider.id foreign key
     .eq("A", categoryId); // A is the Category.id foreign key
   console.log("linkError", linkError);
+  console.log("links", links);
   if (linkError) {
     throw new Error(
       `Failed to fetch provider–category links for "${categorySlug}": ${linkError.message}`,
