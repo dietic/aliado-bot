@@ -62,8 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Normalize accents & keep uppercase for display
     const normalizedCategory = categoryRaw
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toUpperCase();
+      .replace(/[\u0300-\u036f]/g, "");
 
     // 3) Fetch providers — now passing the array of districts directly
     let providers;
