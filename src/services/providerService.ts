@@ -3,7 +3,7 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 // — Env-driven Supabase client setup
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseUrl = process.env.SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
