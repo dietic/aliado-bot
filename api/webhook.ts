@@ -49,7 +49,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const openAIResponse = await classify(body);
     const category = openAIResponse?.category;
     const district = openAIResponse?.district;
-    console.log("openAIResponse", openAIResponse);
+
     const normalizedCategory = category
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
@@ -63,16 +63,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (error) console.error("Supabase error", error);
 
-    const reply = providers?.length
-      ? providers
-          .map((p, i) => `${i + 1}. ${p.firstName} ${p.lastName} – ${p.phone}`)
-          .join("\n")
-      : "Lo siento, no encontré proveedores disponibles.";
+    console.log("providers", providers);
 
     await twilioClient.messages.create({
       from: TWILIO_FROM,
       to: from,
-      body: reply,
+      body: "abc",
     });
 
     return res.status(200).send("Delivered");
