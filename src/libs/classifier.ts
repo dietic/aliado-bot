@@ -6,8 +6,7 @@ import { CATEGORIES } from "../config/categories";
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
 // Extract just the slugs from your config
-const VALID_CATEGORIES = CATEGORIES.map((c) => c.slug.toUpperCase());
-
+const VALID_CATEGORIES = CATEGORIES.map((c) => c.slug);
 export async function classify(text: string): Promise<{
   category: string;
   district: string[];
