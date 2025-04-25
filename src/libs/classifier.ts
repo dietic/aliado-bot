@@ -4,7 +4,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function classify(text: string): Promise<{
   category: string;
-  district: string | null;
+  district: string;
 }> {
   const fn = {
     name: "route_service",
@@ -14,7 +14,7 @@ export async function classify(text: string): Promise<{
         category: { type: "string" },
         district: { type: "string" },
       },
-      required: ["category"],
+      required: ["category", "district"],
     },
   };
 
@@ -37,7 +37,7 @@ export async function classify(text: string): Promise<{
   );
   return {
     category: args.category,
-    district: args.district ?? null,
+    district: args.district,
   };
 }
 
