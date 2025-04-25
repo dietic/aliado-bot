@@ -64,8 +64,11 @@ export async function getProvidersByCategory(
     .limit(3);
 
   if (Array.isArray(district)) {
-    query = query.in("district", district);
+    // Case-insensitive OR for each district
+    const orFilter = district.map((d) => `district.ilike.%${d}%`).join(",");
+    query = query.or(orFilter);
   } else if (district) {
+    // Single district – still case-insensitive
     query = query.ilike("district", `%${district}%`);
   }
 
