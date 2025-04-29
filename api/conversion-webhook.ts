@@ -1,4 +1,3 @@
-// api/webhook.ts
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import twilio from "twilio";
 import getRawBody from "raw-body";
@@ -7,21 +6,17 @@ import { parse } from "querystring";
 import { classify } from "../src/libs/classifier";
 import { getProvidersByCategory } from "../src/services/providerService";
 
-// —— Env vars —————————————————————————————————————
 const AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN!;
 const TWILIO_FROM = process.env.TWILIO_WHATSAPP_FROM!;
 const ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID!;
 
-// —— Twilio client ——————————————————————————————————
 const twilioClient = twilio(ACCOUNT_SID, AUTH_TOKEN);
 
-// —— Handler —————————————————————————————————————
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(200).send("OK");
   }
 
-  // 1) Raw‐body & signature validation
   const rawBuf = await getRawBody(req);
   const rawStr = rawBuf.toString("utf8");
   const params = parse(rawStr);
@@ -44,9 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const body = (params.Body as string).trim();
 
   try {
-    // 2) Classify incoming text
     const ai = await classify(body);
-    console.log(ai);
     const categoryRaw = ai?.category.toLowerCase();
     const districtList = ai?.district; // now an array of strings
 
@@ -59,12 +52,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).send("Delivered: unknown category");
     }
 
-    // Normalize accents & keep uppercase for display
     const normalizedCategory = categoryRaw
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
 
-    // 3) Fetch providers — now passing the array of districts directly
     let providers;
     try {
       providers = await getProvidersByCategory(
@@ -82,7 +73,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).send("Error fetching providers");
     }
 
-    // 4) Build reply
     let replyText: string;
     if (!providers || providers.length === 0) {
       replyText =
@@ -96,7 +86,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         "Aquí tienes los proveedores disponibles:\n" + lines.join("\n");
     }
 
-    // 5) Send it back via Twilio
     await twilioClient.messages.create({
       from: TWILIO_FROM,
       to: from,
