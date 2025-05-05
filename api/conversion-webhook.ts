@@ -21,7 +21,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const rawStr = rawBuf.toString("utf8");
   const params = parse(rawStr);
   const sigHeader = req.headers["x-twilio-signature"] as string | undefined;
-  const fullUrl = "https://aliado-bot.vercel.app/api/webhook";
+  const fullUrl = "https://aliado-bot.vercel.app/api/conversion-webhook";
 
   if (
     sigHeader &&
