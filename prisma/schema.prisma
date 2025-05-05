@@ -1,13 +1,3 @@
-// Prisma schema for Aliado MVP
-// ------------------------------------------------------------
-//  - Postgres database (Supabase)
-//  - Generator outputs Prisma Client
-//  - Category model replaces ServiceCategory enum
-//  - Provider <-> Category many-to-many relation
-//  - Complaint one-to-many relation
-//  - Request & Lead allow tracking user inquiries and provider leads
-// ------------------------------------------------------------
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -17,60 +7,74 @@ datasource db {
   url      = env("SUPABASE_DATABASE_URL")
 }
 
-// Categories of services, stored as separate records to avoid accents in enums
+// -----------------------
+// Servicios / Categorías
+// -----------------------
 model Category {
   id          String     @id @default(uuid())
-  slug        String     @unique // ascii-only key e.g. "servicios-de-plomeria"
-  displayName String     @db.VarChar(100) // human-friendly name with accents
+  slug        String     @unique // clave ascii, ej. "servicios-de-plomeria"
+  displayName String     @db.VarChar(100) // nombre con acentos
   providers   Provider[] @relation("ProviderCategories")
 }
 
+// -----------------------
+// Onboarding temporal
+// -----------------------
+model OnboardingState {
+  id         String   @id @default(uuid())
+  phone      String   @unique @db.VarChar(20) // número de WhatsApp
+  step       Int      @default(1) // de 1 a 6 según flujo
+  name       String?  @db.VarChar(100) // nombre capturado
+  districts  String?  @db.VarChar(255) // lista separada por comas
+  services   String?  @db.VarChar(255) // categorías ofrecidas
+  experience String?  @db.VarChar(255) // texto libre
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// -----------------------
+// Proveedores (Aliados)
+// -----------------------
 model Provider {
-  id         String   @id @default(uuid())
-  dni        String   @db.VarChar(8)
-  firstName  String   @db.VarChar(50)
-  lastName   String   @db.VarChar(50)
-  district   String   @db.VarChar(50)
-  phone      String   @db.VarChar(20)
-  rating     Float    @default(5.0)
-  complaints Int      @default(0)
-  createdAt  DateTime @default(now())
+  id           String   @id @default(uuid())
+  dni          String   @db.VarChar(8)
+  firstName    String   @db.VarChar(50)
+  lastName     String   @db.VarChar(50)
+  district     String   @db.VarChar(50)
+  phone        String   @unique @db.VarChar(20) // clave única para WhatsApp
+  rating       Float    @default(5.0)
+  available    Boolean  @default(false) // si está listo para recibir leads
+  handoffCount Int      @default(0) // cuántos leads se le han asignado hoy
+  createdAt    DateTime @default(now())
 
-  // relations
-  categories     Category[]  @relation("ProviderCategories")
-  complaintsList Complaint[]
-  leads          Lead[]
+  // Relaciones
+  categories Category[] @relation("ProviderCategories")
+  leads      Lead[]
 }
 
-model Complaint {
-  id         String   @id @default(uuid())
-  providerId String
-  userPhone  String   @db.VarChar(20)
-  message    String
-  createdAt  DateTime @default(now())
-
-  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
-
-  @@index([providerId])
-}
-
+// -----------------------
+// Solicitudes de servicio
+// -----------------------
 model Request {
   id           String   @id @default(uuid())
   userPhone    String   @db.VarChar(20)
   rawText      String
-  categorySlug String?  @db.VarChar(100) // store the slug of the classified category
+  categorySlug String?  @db.VarChar(100)
   district     String?
   createdAt    DateTime @default(now())
 
   leads Lead[]
 }
 
+// -----------------------
+// Leads asignados
+// -----------------------
 model Lead {
   id          String   @id @default(uuid())
   requestId   String
   providerId  String
-  deliveredAt DateTime @default(now())
-  contacted   Boolean  @default(false)
+  deliveredAt DateTime @default(now()) // cuándo se envió el lead
+  contacted   Boolean  @default(false) // si el Aliado respondió OK
 
   request  Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
   provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
