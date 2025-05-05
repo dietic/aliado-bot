@@ -4,13 +4,13 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
 import Twilio from "twilio";
 
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
 // ——————————————————————
 // Configuración Supabase
 // ——————————————————————
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_ANON_KEY!,
-);
+const supabase = createClient(supabaseUrl, supabaseKey!);
 
 // ——————————————————————
 // Handler principal
