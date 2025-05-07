@@ -61,3 +61,8 @@ ehthumbs.db
 prisma/migrations/
 # local tunnel URLs
 .ngrok.log
+.cache/
+.vercel/
+.vercelignore
+.next/
+out/
