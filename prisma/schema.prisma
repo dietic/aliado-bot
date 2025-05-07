@@ -1,10 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("SUPABASE_DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("SUPABASE_DATABASE_URL")
+  extensions = [pgcrypto]
 }
 
 // -----------------------
@@ -21,15 +23,15 @@ model Category {
 // Onboarding temporal
 // -----------------------
 model OnboardingState {
-  id         String   @id @default(uuid())
-  phone      String   @unique @db.VarChar(20) // número de WhatsApp
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phone      String   @unique @db.VarChar(30) // número de WhatsApp
   step       Int      @default(1) // de 1 a 6 según flujo
   name       String?  @db.VarChar(100) // nombre capturado
   districts  String?  @db.VarChar(255) // lista separada por comas
   services   String?  @db.VarChar(255) // categorías ofrecidas
   experience String?  @db.VarChar(255) // texto libre
   createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  updatedAt  DateTime @default(now())
 }
 
 // -----------------------
