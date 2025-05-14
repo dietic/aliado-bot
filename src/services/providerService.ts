@@ -21,11 +21,11 @@ export interface Provider {
  */
 export async function getProvidersByCategory(
   categorySlug: string,
-  district?: string | string[],
+  district?: string | string[]
 ): Promise<Provider[]> {
   // 1️⃣ Lookup the category case-insensitively
   const { data: categoryRow, error: catError } = await supabase
-    .from("Category")
+    .from("categories")
     .select("id")
     .ilike("slug", categorySlug)
     .maybeSingle();
@@ -33,7 +33,7 @@ export async function getProvidersByCategory(
   console.log("categoryRow", categoryRow);
   if (catError) {
     throw new Error(
-      `Category lookup failed for "${categorySlug}": ${catError.message}`,
+      `Category lookup failed for "${categorySlug}": ${catError.message}`
     );
   }
   if (!categoryRow) {
@@ -43,14 +43,14 @@ export async function getProvidersByCategory(
 
   // 2️⃣ Pull the join‐table links from _ProviderCategories
   const { data: links, error: linkError } = await supabase
-    .from("_ProviderCategories") // implicit join table named after your @relation
+    .from("provider_categories") // implicit join table named after your @relation
     .select("B") // B is the Provider.id foreign key
     .eq("A", categoryId); // A is the Category.id foreign key
   console.log("linkError", linkError);
   console.log("links", links);
   if (linkError) {
     throw new Error(
-      `Failed to fetch provider–category links for "${categorySlug}": ${linkError.message}`,
+      `Failed to fetch provider–category links for "${categorySlug}": ${linkError.message}`
     );
   }
 
@@ -61,7 +61,7 @@ export async function getProvidersByCategory(
 
   // 3️⃣ Build the provider query
   let query = supabase
-    .from("Provider")
+    .from("providers")
     .select("firstName,lastName,phone")
     .in("id", providerIds)
     .limit(3);

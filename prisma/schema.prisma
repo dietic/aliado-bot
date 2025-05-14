@@ -22,7 +22,7 @@ model Category {
 // -----------------------
 // Onboarding temporal
 // -----------------------
-model OnboardingState {
+model onboarding_state {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   phone      String   @unique @db.VarChar(30) // número de WhatsApp
   step       Int      @default(1) // de 1 a 6 según flujo

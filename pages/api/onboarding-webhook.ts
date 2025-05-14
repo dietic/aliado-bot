@@ -33,13 +33,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (!from) {
     twiml.message(
-      "No pudimos identificar tu número. Intenta de nuevo más tarde.",
+      "No pudimos identificar tu número. Intenta de nuevo más tarde."
     );
     return sendResponse();
   }
 
   let { data: state, error } = await supabase
-    .from("OnboardingState")
+    .from("onboarding_state")
     .select("*")
     .eq("phone", from)
     .single();
@@ -57,7 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
       try {
         const { data: user } = await supabase
-          .from("OnboardingState")
+          .from("onboarding_state")
           .insert({ phone: from, step: 1 })
           .select();
         state = user?.[0]!;
@@ -83,7 +83,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   switch (state.step) {
     case 1:
       await supabase
-        .from("OnboardingState")
+        .from("onboarding_state")
         .update({ name: text, step: 2 })
         .eq("phone", from);
       twiml.message("¿Cuál es tu nombre completo?");
@@ -91,25 +91,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     case 2:
       await supabase
-        .from("OnboardingState")
+        .from("onboarding_state")
         .update({ name: text, step: 3 })
         .eq("phone", from);
       twiml.message("¿En qué distrito(s) trabajas?");
       break;
     case 3:
       await supabase
-        .from("OnboardingState")
+        .from("onboarding_state")
         .update({ districts: text, step: 4 })
         .eq("phone", from);
       twiml.message("Perfecto, ¿qué servicios ofreces?");
       break;
     case 4:
       await supabase
-        .from("OnboardingState")
+        .from("onboarding_state")
         .update({ services: text })
         .eq("phone", from);
       const { data: raw } = await supabase
-        .from("OnboardingState")
+        .from("onboarding_state")
         .select("name,districts,services")
         .eq("phone", from)
         .single();
@@ -119,7 +119,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         districts: raw?.districts,
         services: raw?.services,
       };
-
+      console.log("userObj", JSON.stringify(userObj));
       const fn = {
         name: "parse_user_response",
         parameters: {
@@ -137,8 +137,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 type: "string",
                 enum: VALID_DISTRICTS,
               },
-              description:
-                "Lista de distritos válidos, corrige tipografías y coincide lo mejor posible",
+              description: [
+                "Array de slugs de distritos válidos.",
+                "Extrae uno o varios servicios del texto de entrada.",
+                "No inventes categorías: si no hay match, devuelve un array vacío.",
+              ].join(" "),
             },
             services: {
               type: "array",
@@ -167,42 +170,75 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           { role: "user", content: JSON.stringify(userObj) },
         ],
         functions: [fn],
-        function_call: { name: "parse_user_response" },
+        function_call: { name: fn.name },
       });
       const cleaned = JSON.parse(
-        res?.choices?.[0]?.message?.function_call?.arguments || "",
+        res?.choices?.[0]?.message?.function_call?.arguments || ""
       );
       await supabase
-        .from("OnboardingState")
+        .from("onboarding_state")
         .update({
           name: cleaned.name,
           districts: cleaned.districts,
           services: cleaned.services,
-          step: 5,
+          // step: 5,
         })
         .eq("phone", from);
 
-      await supabase.from("Provider").insert({
-        firstName: cleaned.name!.split(" ").slice(0, -1).join(" "),
-        lastName: cleaned.name!.split(" ").slice(-1).join(" "),
-        dni: "",
-        services: cleaned.services!,
-        district: cleaned.districts!,
-        phone: from,
-        rating: 3.0,
-        available: false,
-        handoffCount: 0,
-      });
-      // send summary + link to edit
+      const { data: provider, error: providerError } = await supabase
+        .from("providers")
+        .insert({
+          firstName: cleaned.name!.split(" ").slice(0, -1).join(" "),
+          lastName: cleaned.name!.split(" ").slice(-1).join(" "),
+          phone: from,
+        })
+        .select()
+        .single();
+
+      if (!provider) {
+        throw new Error("Provider was not created successfully");
+      }
+
+      const { data: categories, error: catQueryErr } = await supabase
+        .from("categories")
+        .select("id, slug")
+        .in("slug", cleaned.services);
+
+      if (!categories) throw new Error("Failed to fetch categories");
+
+      const categoryLinks = categories.map((cat) => ({
+        provider_id: provider.id,
+        category_id: cat.id,
+      }));
+
+      const { data: insertedCategories, error: catInsertErr } = await supabase
+        .from("provider_categories")
+        .insert(categoryLinks);
+
+      const { data: districts, error: distQueryErr } = await supabase
+        .from("districts")
+        .select("id, slug")
+        .in("slug", cleaned.districts);
+
+      if (!districts) throw new Error("Failed to fetch districts");
+
+      const districtLinks = districts.map((d) => ({
+        provider_id: provider.id,
+        district_id: d.id,
+      }));
+
+      const { data: insertedDistricts, error: districtInsertErr } =
+        await supabase.from("provider_districts").insert(districtLinks);
+
       twiml.message(
         `*¡Bienvenido 🎉 !*\n\n` +
           `Estos son lost datos que nos has dado:\n\n` +
           `*• Nombre:* ${cleaned.name}\n` +
           `*• Distritos:* ${cleaned.districts}\n` +
           `*• Servicios:* ${cleaned.services}\n\n` +
-          `Si deseas ajustar algo ingresa a https://aliado.app/mi-cuenta`,
+          `Si deseas ajustar algo ingresa a https://aliado.app/mi-cuenta`
       );
-      await supabase.from("OnboardingState").delete().eq("phone", from);
+      // await supabase.from("onboarding_state").delete().eq("phone", from);
       break;
 
     default:
